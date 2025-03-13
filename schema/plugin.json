@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jupyterlab-resource-tracker",
+  "description": "jupyterlab-resource-tracker settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
