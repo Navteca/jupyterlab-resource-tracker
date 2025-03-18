@@ -1,28 +1,34 @@
 import React from 'react';
-import { Divider, Typography, Paper } from '@mui/material';
+import { Typography, Paper } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { Detail } from '../common/types';
 
-const DetailsComponent: React.FC<{ details: Detail[] }> = (props): JSX.Element => {
-  const columnsCosts: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'username', headerName: 'User', width: 70 },
-    { field: 'ec2StandardCost', headerName: 'Standard ($)', type: 'number', width: 110 },
-    { field: 'ec2LargeCost', headerName: 'Large ($)', type: 'number', width: 110 },
-    { field: 'ec2ExtraCost', headerName: 'Extra ($)', type: 'number', width: 110 },
-    { field: 'ec22xLargeCost', headerName: '2x Large ($)', type: 'number', width: 110 },
-    { field: 'ec28xLargeCost', headerName: '8x Large ($)', type: 'number', width: 110 },
-  ];
+interface DetailsComponentProps {
+  details: Detail[];
+  loading: boolean;
+}
 
-  const columnsTime: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'username', headerName: 'User', width: 70 },
-    { field: 'ec2StandardTime', headerName: 'Standard (time)', width: 130 },
-    { field: 'ec2LargeTime', headerName: 'Large (time)', width: 130 },
-    { field: 'ec2ExtraTime', headerName: 'Extra (time)', width: 130 },
-    { field: 'ec22xLargeTime', headerName: '2x Large (time)', width: 130 },
-    { field: 'ec28xLargeTime', headerName: '8x Large (time)', width: 130 },
-    { field: 'gpuNodeTime', headerName: 'GPU Node (time)', width: 130 },
+const DetailsComponent: React.FC<DetailsComponentProps> = (props): JSX.Element => {
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'id', width: 150 },
+    { field: 'podName', headerName: 'Pod Name', width: 150 },
+    { field: 'creationTimestamp', headerName: 'Created at', width: 170 },
+    { field: 'deletionTimestamp', headerName: 'Deleted at', width: 170 },
+    { field: 'cpuLimit', headerName: 'cpuLimit', width: 90 },
+    { field: 'memoryLimit', headerName: 'memoryLimit', width: 100 },
+    { field: 'gpuLimit', headerName: 'gpuLimit', width: 90 },
+    { field: 'volumes', headerName: 'Volumes', width: 170 },
+    { field: 'namespace', headerName: 'Namespace', width: 110 },
+    { field: 'notebook_duration', headerName: 'Notebook duration', width: 150 },
+    { field: 'session_cost', headerName: 'Session cost ($)', type: 'number', width: 150 },
+    { field: 'instance_type', headerName: 'Instance type', width: 110 },
+    { field: 'region', headerName: 'Region', width: 80 },
+    { field: 'pricing_type', headerName: 'Pricing type', width: 110 },
+    { field: 'cost', headerName: 'Cost ($)', width: 80 },
+    { field: 'instanceRAM', headerName: 'RAM', type: 'number', width: 70 },
+    { field: 'instanceCPU', headerName: 'CPU', type: 'number', width: 70 },
+    { field: 'instanceGPU', headerName: 'GPU', type: 'number', width: 70 },
+    { field: 'instanceId', headerName: 'instanceId', width: 170 },
   ];
 
   const paginationModel = { page: 0, pageSize: 5 };
@@ -30,29 +36,22 @@ const DetailsComponent: React.FC<{ details: Detail[] }> = (props): JSX.Element =
   return (
     <React.Fragment>
       <Typography variant="h6" gutterBottom>
-        Costs by Server type
+        Costs by Instance
       </Typography>
       <Paper sx={{ p: 2, boxShadow: 3, borderRadius: 2, mb: 2 }}>
         <DataGrid
           autoHeight
           rows={props.details}
-          columns={columnsCosts}
-          initialState={{ pagination: { paginationModel } }}
-          pageSizeOptions={[5, 10]}
-          disableRowSelectionOnClick
-          sx={{ border: 0 }}
-        />
-      </Paper>
-      <Divider sx={{ my: 2 }} />
-      <Typography variant="h6" gutterBottom>
-        Time by Server type
-      </Typography>
-      <Paper sx={{ p: 2, boxShadow: 3, borderRadius: 2, mb: 2 }}>
-        <DataGrid
-          autoHeight
-          rows={props.details}
-          columns={columnsTime}
-          initialState={{ pagination: { paginationModel } }}
+          columns={columns}
+          loading={props.loading}
+          initialState={{
+            pagination: { paginationModel },
+            columns: {
+              columnVisibilityModel: {
+                id: false,
+              },
+            },
+          }}
           pageSizeOptions={[5, 10]}
           disableRowSelectionOnClick
           sx={{ border: 0 }}

@@ -1,25 +1,31 @@
 export interface Summary {
-     id: number;
-     nbTime: string;
-     username: string;
+     id: string
+     podName: string;
+     usage: number;
      cost: number;
 }
 
 export interface Detail {
-     id: number
-     username: string
-     ec2StandardTime: string
-     ec2StandardCost: number
-     ec2LargeTime: string
-     ec2LargeCost: number
-     ec2ExtraTime: string
-     ec2ExtraCost: number
-     ec22xLargeTime: string
-     ec22xLargeCost: number
-     ec28xLargeTime: string
-     ec28xLargeCost: number
-     gpuNodeTime: string
-     gpuNodeCost: number
+     id: string
+     podName: string
+     creationTimestamp: string
+     deletionTimestamp: string
+     cpuLimit: string
+     memoryLimit: string
+     gpuLimit: string
+     volumes: string
+     namespace: string
+     notebook_duration: string
+     session_cost: number
+     instance_id: string
+     instance_type: string
+     region: string
+     pricing_type: string
+     cost: string
+     instanceRAM: number
+     instanceCPU: number
+     instanceGPU: number
+     instanceId: string
 }
 
 export interface Logs {

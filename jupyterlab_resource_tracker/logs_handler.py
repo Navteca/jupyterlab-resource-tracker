@@ -2,6 +2,8 @@ import os
 import json
 import logging
 import sys
+import uuid
+import boto3
 from logging import Logger
 
 import tornado
@@ -11,73 +13,102 @@ from jupyter_server.base.handlers import APIHandler
 from pydantic import BaseModel, Field
 from typing import List
 
-# Configurar el logger
+# Configuring the logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # Asegúrate de que el nivel es INFO o menor
+logger.setLevel(logging.INFO)
 
-# Crear un handler para la salida estándar (stdout)
+# Create a handler for the standard output (stdout)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
 
-# Formateador para los logs
+# Log formatter
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 
-# Agregar el handler al logger
+# Add the handler to the logger
 logger.addHandler(console_handler)
 
 
 class Summary(BaseModel):
-    id: int
-    nbTime: str  # Debe ser una cadena
-    username: str
-    cost: float  # Debe ser un número decimal
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    podName: str
+    usage: float
+    cost: float
 
 
 class SummaryList(BaseModel):
-    summaries: List[Summary]  # Lista de objetos Summary
+    summaries: List[Summary]
 
 
 class Detail(BaseModel):
-    id: int
-    username: str
-    ec2StandardTime: str
-    ec2StandardCost: float
-    ec2LargeTime: str
-    ec2LargeCost: float
-    ec2ExtraTime: str
-    ec2ExtraCost: float
-    ec22xLargeTime: str
-    ec22xLargeCost: float
-    ec28xLargeTime: str
-    ec28xLargeCost: float
-    gpuNodeTime: str
-    gpuNodeCost: float
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    podName: str
+    creationTimestamp: str
+    deletionTimestamp: str
+    cpuLimit: str
+    memoryLimit: str
+    gpuLimit: str
+    volumes: str
+    namespace: str
+    notebook_duration: str
+    session_cost: float
+    instance_id: str
+    instance_type: str
+    region: str
+    pricing_type: str
+    cost: float
+    instanceRAM: int
+    instanceCPU: int
+    instanceGPU: int
+    instanceId: str
 
 
 class DetailList(BaseModel):
-    details: List[Detail]  # Lista de objetos Detail
+    details: List[Detail]
 
 
-# Refresh API Key handler
 class LogsHandler(APIHandler):
     @tornado.web.authenticated
     def get(self):
-        # Ahora los logs deberían aparecer en la consola
         logger.info("Getting usages and cost stats")
-        logger.info(os.environ["LOG_FILES_PATH"])
         try:
-            # Nombre del archivo JSON
-            summary_filename = f"{os.environ['LOG_FILES_PATH']}/summary.log"
-            details_filename = f"{os.environ['LOG_FILES_PATH']}/details.log"
+            bucket_name = os.environ["OSS_S3_BUCKET_NAME"]
+            files = {
+                "oss-admin-monthsummary.log": "oss-admin-monthsummary.log",
+                "oss-admin.log": "oss-admin.log",
+            }
 
-            # Leer el archivo summary JSON
+            # Local directory where the downloaded files will be saved
+            local_dir = os.environ["OSS_LOG_FILE_PATH"]
+
+            for filename, s3_key in files.items():
+                local_path = os.path.join(local_dir, filename)
+                # Download the file from S3
+                self.download_file_from_s3(bucket_name, s3_key, local_path)
+
+            summary_filename = (
+                f"{os.environ['OSS_LOG_FILE_PATH']}/oss-admin-monthsummary.log"
+            )
+            details_filename = f"{os.environ['OSS_LOG_FILE_PATH']}/oss-admin.log"
+
+            logs = []
             with open(summary_filename, "r", encoding="utf-8") as file:
-                summary_list = SummaryList(**{"summaries": json.load(file)})
+                for line in file:
+                    line = line.strip()  # removes white spaces and line breaks
+                    if line:  # ignore empty lines
+                        logs.append(json.loads(line))
+            summary_list = SummaryList(**{"summaries": logs})
 
-            # Leer el archivo details JSON
+            logs = []
             with open(details_filename, "r", encoding="utf-8") as file:
-                details_list = DetailList(**{"details": json.load(file)})
+                for line in file:
+                    line = line.strip()  # removes white spaces and line breaks
+                    if line:  # ignore empty lines
+                        data = json.loads(line)
+                        if "session-cost" in data:
+                            data["session_cost"] = data.pop("session-cost")
+                        logs.append(data)
+            details_list = DetailList(**{"details": logs})
 
         except Exception as exc:
             logger.info(
@@ -97,3 +128,26 @@ class LogsHandler(APIHandler):
                     }
                 )
             )
+
+    def download_file_from_s3(self, bucket: str, s3_key: str, local_path: str) -> None:
+        """
+        Download a file from S3 and save it locally.
+        """
+        s3 = boto3.client("s3")
+        try:
+            s3.download_file(bucket, s3_key, local_path)
+            print(f"Downloaded {s3_key} at {local_path}")
+        except Exception as e:
+            print(f"Error while downloading {s3_key}: {e}")
+
+    def load_log_file(self, file_path: str) -> list:
+        """
+        Reads a .log file in JSON Lines format and returns a list of objects.
+        """
+        data = []
+        with open(file_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data.append(json.loads(line))
+        return data

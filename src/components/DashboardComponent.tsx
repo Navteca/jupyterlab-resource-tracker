@@ -16,12 +16,14 @@ import { Detail, Logs, Summary } from '../common/types';
 const DashboardComponent: React.FC = (props): JSX.Element => {
   const [summaryList, setSummaryList] = React.useState<Summary[]>([]);
   const [detailList, setDetailList] = React.useState<Detail[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     getLogs();
   }, []);
 
   const getLogs = async () => {
+    setLoading(true);
     try {
       const response = await requestAPI<Logs>('usages-costs/logs', {
         method: "GET",
@@ -39,6 +41,8 @@ const DashboardComponent: React.FC = (props): JSX.Element => {
       }
     } catch (error) {
       console.log(`Error => ${JSON.stringify(error, null, 2)}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,17 +55,17 @@ const DashboardComponent: React.FC = (props): JSX.Element => {
         </Toolbar>
       </AppBar>
       <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
-        <Button 
-          onClick={getLogs} 
-          variant="contained" 
-          color="primary" 
+        <Button
+          onClick={getLogs}
+          variant="contained"
+          color="primary"
           sx={{ mb: 2 }}
         >
           REFRESH
         </Button>
-        <SummaryComponent summary={summaryList} />
+        <SummaryComponent summary={summaryList} loading={loading} />
         <Divider sx={{ my: 2 }} />
-        <DetailsComponent details={detailList} />
+        <DetailsComponent details={detailList} loading={loading} />
         <Divider sx={{ my: 2 }} />
       </Box>
     </React.Fragment>
