@@ -78,7 +78,7 @@ const DashboardComponent: React.FC = (): JSX.Element => {
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
+      <Box sx={{ p: 2, height: '92%', overflowY: 'auto' }}>
         <SummaryComponent summary={summaryList} loading={loading} />
         <Box sx={{ my: 2 }} />
         <DetailsComponent details={detailList} loading={loading} />
