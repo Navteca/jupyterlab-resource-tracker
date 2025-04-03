@@ -3,8 +3,6 @@ import json
 import logging
 import sys
 import uuid
-import boto3
-from logging import Logger
 
 import tornado
 import tornado.web
@@ -73,16 +71,17 @@ class LogsHandler(APIHandler):
         logger.info("Getting usages and cost stats")
         try:
             # Verificar que las variables de entorno necesarias están definidas
-            required_env_vars = ["OSS_S3_BUCKET_NAME"]
+            required_env_vars = ["OSS_LOG_FILE_PATH"]
             for var in required_env_vars:
                 if var not in os.environ:
                     raise EnvironmentError(
                         f"Missing required environment variable: {var}"
                     )
 
-            bucket_path = os.environ["OSS_S3_BUCKET_NAME"]
-            bucket_name, s3_key = bucket_path.split("/", 1)
-            logs = self.load_log_file_from_s3(bucket_name, s3_key)
+            local_path = os.environ["OSS_LOG_FILE_PATH"]
+            if not os.path.isfile(local_path):
+                raise FileNotFoundError(f"Log file not found: {local_path}")
+            logs = self.load_log_file(local_path)
             summary_list = SummaryList(summaries=logs)
 
         except EnvironmentError as e:
@@ -105,22 +104,21 @@ class LogsHandler(APIHandler):
             self.set_status(200)
             self.finish(json.dumps({"summary": [s.model_dump() for s in summary_list.summaries], "details": []}))
 
-    def load_log_file_from_s3(self, bucket: str, s3_key: str) -> list:
+    def load_log_file(self, file_path: str) -> list:
         """
-        Loads a JSON Lines log file from S3 and returns a list of objects.
+        Reads a .log file in JSON Lines format and returns a list of objects.
         """
-        s3 = boto3.client("s3")
         data = []
         try:
-            obj = s3.get_object(Bucket=bucket, Key=s3_key)
-            for line in obj["Body"].iter_lines():
-                line = line.decode("utf-8").strip()
-                if line:
-                    data.append(json.loads(line))
+            with open(file_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        data.append(json.loads(line))
         except json.JSONDecodeError:
-            logger.error(f"Invalid JSON format in {s3_key}")
+            logger.error(f"Invalid JSON format in {file_path}")
             raise json.JSONDecodeError("Invalid JSON in log file.", line, 0)
         except Exception as e:
-            logger.error(f"Failed to read {s3_key} from S3: {e}")
-            raise FileNotFoundError(f"Could not read {s3_key} from S3.")
+            logger.error(f"Failed to read {file_path}: {e}")
+            raise FileNotFoundError(f"Could not read log file at {file_path}.")
         return data

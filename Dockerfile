@@ -11,4 +11,4 @@ RUN apt-get update \
   && apt-get -y autoremove
 
 RUN pip install --upgrade jupyterlab==4.3.5 
-RUN pip install jupyterlab-resource-tracker>=0.2.8
+RUN pip install jupyterlab-resource-tracker>=0.2.9
