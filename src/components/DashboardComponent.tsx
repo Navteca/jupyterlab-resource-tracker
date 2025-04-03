@@ -10,14 +10,14 @@ import {
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SummaryComponent from './SummaryComponent';
-import DetailsComponent from './DetailsComponent';
+// import DetailsComponent from './DetailsComponent';
 import { requestAPI } from '../handler';
-import { Detail, Logs, Summary } from '../common/types';
+import { Logs, Summary } from '../common/types';
 import { showErrorMessage } from '@jupyterlab/apputils';
 
 const DashboardComponent: React.FC = (): JSX.Element => {
   const [summaryList, setSummaryList] = React.useState<Summary[]>([]);
-  const [detailList, setDetailList] = React.useState<Detail[]>([]);
+  // const [detailList, setDetailList] = React.useState<Detail[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
@@ -33,7 +33,7 @@ const DashboardComponent: React.FC = (): JSX.Element => {
 
       if (response) {
         setSummaryList(response.summary);
-        setDetailList(response.details);
+        // setDetailList(response.details);
       }
     } catch (error: any) {
       console.error('Error fetching logs:', error);
@@ -80,8 +80,8 @@ const DashboardComponent: React.FC = (): JSX.Element => {
       </AppBar>
       <Box sx={{ p: 2, height: '92%', overflowY: 'auto' }}>
         <SummaryComponent summary={summaryList} loading={loading} />
-        <Box sx={{ my: 2 }} />
-        <DetailsComponent details={detailList} loading={loading} />
+        {/* <Box sx={{ my: 2 }} />
+        <DetailsComponent details={detailList} loading={loading} /> */}
       </Box>
     </React.Fragment>
   );
